@@ -11,3 +11,7 @@ Check installation with:
 ```bash
 rustc --version
 cargo --version
+```
+
+## Next Up
+- Add food
