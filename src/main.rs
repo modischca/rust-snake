@@ -1,8 +1,7 @@
 use crossterm::event::{Event, KeyCode};
-use crossterm::{event, execute, terminal, ExecutableCommand};
-use std::io::{self};
+use crossterm::{event, execute};
+use snake::{COLS, ROWS};
 use std::time::Duration;
-
 #[derive(Clone, PartialEq, Debug)]
 enum Direction {
     UP,
@@ -10,10 +9,8 @@ enum Direction {
     LEFT,
     RIGHT,
 }
+mod graphics;
 mod test;
-
-const COLS: usize = 12;
-const ROWS: usize = 12;
 
 struct Game {
     score: i32,
@@ -101,26 +98,26 @@ fn read_input_from_terminal(mut snake: Snake) {
                         if snake.direction == Direction::LEFT || snake.direction == Direction::RIGHT
                         {
                             snake.set_direction(Direction::UP);
-                            draw(&snake.board);
+                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('d') => {
                         if snake.direction == Direction::UP || snake.direction == Direction::DOWN {
                             snake.set_direction(Direction::RIGHT);
-                            draw(&snake.board);
+                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('a') => {
                         if snake.direction == Direction::UP || snake.direction == Direction::DOWN {
                             snake.set_direction(Direction::LEFT);
-                            draw(&snake.board);
+                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('s') => {
                         if snake.direction == Direction::LEFT || snake.direction == Direction::RIGHT
                         {
                             snake.set_direction(Direction::DOWN);
-                            draw(&snake.board);
+                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('c') => {
@@ -137,30 +134,9 @@ fn read_input_from_terminal(mut snake: Snake) {
         } else {
             // Either an event happened OR 500ms passed
             snake.move_next();
-            draw(&snake.board);
+            graphics::draw(&snake.board);
         }
     }
-}
-
-fn draw(datagrid: &[[bool; COLS]; ROWS]) {
-    let mut stdout = io::stdout();
-    stdout
-        .execute(terminal::Clear(terminal::ClearType::All))
-        .unwrap();
-    let empty_block = '\u{25A1}';
-    let non_empty_block = '\u{25A0}';
-    let mut output = String::from("");
-    for row in datagrid.iter() {
-        for &cell in row {
-            if cell == true {
-                output.push_str(&format!("{}", non_empty_block.to_string()));
-            } else {
-                output.push_str(&format!("{}", empty_block));
-            }
-        }
-        output.push_str("\r\n");
-    }
-    print!("{}", output);
 }
 
 fn calculate_next_x_y(mut x: i32, mut y: i32, direction: &Direction) -> (i32, i32) {

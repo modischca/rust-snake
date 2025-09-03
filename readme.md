@@ -13,5 +13,12 @@ rustc --version
 cargo --version
 ```
 
+## Run
+```cargo run```
+
+## How to play
+
+Use keys w,d,a,s
+
 ## Next Up
 - Add food
