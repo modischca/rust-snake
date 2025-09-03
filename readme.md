@@ -22,3 +22,5 @@ Use keys w,d,a,s
 
 ## Next Up
 - Add food
+- Refactor
+- Write tests
