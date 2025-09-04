@@ -12,6 +12,50 @@ enum Direction {
 mod graphics;
 mod test;
 
+#[derive(Clone, Copy)]
+struct Pos {
+    x: i32,
+    y: i32,
+}
+
+impl Pos {
+    pub fn next(&self, direction: &Direction) -> Pos {
+        match direction {
+            Direction::UP => Pos {
+                x: self.x,
+                y: if self.y < 1 {
+                    (COLS - 1) as i32
+                } else {
+                    &self.y - 1
+                },
+            },
+            Direction::LEFT => Pos {
+                y: self.y,
+                x: if self.x < 1 {
+                    (ROWS - 1) as i32
+                } else {
+                    &self.x - 1
+                },
+            },
+            Direction::RIGHT => Pos {
+                y: self.y,
+                x: if self.x >= (COLS - 1) as i32 {
+                    0
+                } else {
+                    &self.x + 1
+                },
+            },
+            Direction::DOWN => Pos {
+                x: self.x,
+                y: if self.y >= (ROWS - 1) as i32 {
+                    0
+                } else {
+                    &self.y + 1
+                },
+            },
+        }
+    }
+}
 struct Game {
     score: i32,
 }
@@ -19,17 +63,18 @@ struct Game {
 impl Game {
     pub fn start(self) -> Snake {
         let start_direction = Direction::RIGHT;
-        let mut parts: Vec<(i32, i32)> = vec![];
-        let size = 4;
+        let start_pos = Pos { x: 5, y: 5 };
+        let mut parts: Vec<Pos> = vec![start_pos];
+        let size = 6;
         for _i in 0..size {
-            let pos = calculate_next_x_y(5, 1, &start_direction);
-            parts.push((pos.0, pos.1));
+            let pos = parts[_i].next(&start_direction);
+            parts.push(pos);
         }
 
         let mut grid: [[bool; COLS]; ROWS] = [[false; COLS]; ROWS];
 
-        for xy in parts.iter() {
-            grid[xy.1 as usize][xy.0 as usize] = true;
+        for pos in parts.iter() {
+            grid[pos.y as usize][pos.x as usize] = true;
         }
 
         let snake = Snake {
@@ -44,14 +89,14 @@ impl Game {
 struct Snake {
     direction: Direction,
     board: [[bool; COLS]; ROWS],
-    parts_x_y: Vec<(i32, i32)>,
+    parts_x_y: Vec<Pos>,
 }
 
 impl Snake {
     pub fn eat(&mut self) {
         let head = self.parts_x_y.last().unwrap();
         // Double head, but will be fixed in next move.
-        self.parts_x_y.push((head.0, head.1));
+        //self.parts_x_y.push((head.0, head.1));
     }
 
     pub fn set_direction(&mut self, new_direction: Direction) {
@@ -64,14 +109,15 @@ impl Snake {
         // Head
         let head = self.parts_x_y.last().unwrap();
         // New position for head
-        let new_pos = calculate_next_x_y(head.0, head.1, &self.direction);
+        //let new_pos = calculate_next_x_y(head.clone(), &self.direction);
+        let new_pos = head.next(&self.direction);
         // New parts is eq to the old minus the last
         let mut current_parts = self.parts_x_y[1..].to_vec();
-        current_parts.push((new_pos.0, new_pos.1));
+        current_parts.push(new_pos);
         self.parts_x_y = current_parts;
 
         for pos in &self.parts_x_y {
-            grid[pos.1 as usize][pos.0 as usize] = true;
+            grid[pos.y as usize][pos.x as usize] = true;
         }
         self.board = grid;
         grid
@@ -137,38 +183,4 @@ fn read_input_from_terminal(mut snake: Snake) {
             graphics::draw(&snake.board);
         }
     }
-}
-
-fn calculate_next_x_y(mut x: i32, mut y: i32, direction: &Direction) -> (i32, i32) {
-    match direction {
-        Direction::UP => {
-            if y < 1 {
-                y = (COLS - 1) as i32;
-            } else {
-                y = &y - 1;
-            }
-        }
-        Direction::LEFT => {
-            if x < 1 {
-                x = (ROWS - 1) as i32;
-            } else {
-                x = &x - 1;
-            }
-        }
-        Direction::RIGHT => {
-            if x >= (COLS - 1) as i32 {
-                x = 0;
-            } else {
-                x = &x + 1;
-            }
-        }
-        Direction::DOWN => {
-            if y >= (ROWS - 1) as i32 {
-                y = 0;
-            } else {
-                y = &y + 1;
-            }
-        }
-    };
-    (x, y)
 }
