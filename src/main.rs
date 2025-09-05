@@ -2,6 +2,15 @@ use crossterm::event::{Event, KeyCode};
 use crossterm::{event, execute};
 use snake::{COLS, ROWS};
 use std::time::Duration;
+use std::time::SystemTime;
+#[derive(Clone, Copy)]
+enum Cell {
+    EMPTY,
+    SNAKE_BODY,
+    SNAKE_HEAD,
+    FOOD,
+}
+
 #[derive(Clone, PartialEq, Debug)]
 enum Direction {
     UP,
@@ -59,7 +68,9 @@ impl Pos {
 }
 struct Game {
     score: i32,
-    next_food_target: Pos,
+    next_food_target: Option<Pos>,
+    board: [[Cell; COLS]; ROWS],
+    game_start_at: std::time::SystemTime,
 }
 
 impl Game {
@@ -72,25 +83,55 @@ impl Game {
             let pos = parts[_i].next(&start_direction);
             parts.push(pos);
         }
-
-        let mut grid: [[bool; COLS]; ROWS] = [[false; COLS]; ROWS];
-
-        for pos in parts.iter() {
-            grid[pos.y as usize][pos.x as usize] = true;
-        }
-
         let snake = Snake {
             direction: Direction::RIGHT,
-            board: grid,
             parts_x_y: parts,
         };
+        self.update_board(&snake);
         snake
+    }
+
+    pub fn update_board(&mut self, snake: &Snake) {
+        // The new grid
+        if (self.next_food_target.is_some()) {
+            let a = snake.parts_x_y.iter().find(|p| {
+                p.x == self.next_food_target.unwrap().x && p.y == self.next_food_target.unwrap().y
+            });
+            if a.is_some() {
+                self.score = self.score + 10;
+                self.next_food_target = None;
+            }
+        }
+
+        let mut grid: [[Cell; COLS]; ROWS] = [[Cell::EMPTY; COLS]; ROWS];
+
+        for pos in &snake.parts_x_y {
+            grid[pos.y as usize][pos.x as usize] = Cell::SNAKE_BODY;
+        }
+        let head = &snake.parts_x_y.iter().last().unwrap();
+        grid[head.y as usize][head.x as usize] = Cell::SNAKE_HEAD;
+
+        if self.next_food_target.is_none() {
+            // Add food
+            let x = rand::random_range(0..ROWS - 1);
+            let y = rand::random_range(0..COLS - 1);
+            let food_at_pos = Pos {
+                x: x as i32,
+                y: y as i32,
+            };
+            self.next_food_target = Some(food_at_pos);
+            grid[y][x] = Cell::FOOD;
+        } else {
+            grid[self.next_food_target.unwrap().y as usize]
+                [self.next_food_target.unwrap().x as usize] = Cell::FOOD;
+        }
+
+        self.board = grid;
     }
 }
 
 struct Snake {
     direction: Direction,
-    board: [[bool; COLS]; ROWS],
     parts_x_y: Vec<Pos>,
 }
 
@@ -104,9 +145,7 @@ impl Snake {
         self.direction = new_direction;
     }
 
-    pub fn move_next(&mut self) -> [[bool; COLS]; ROWS] {
-        // The new grid
-        let mut grid: [[bool; COLS]; ROWS] = [[false; COLS]; ROWS];
+    pub fn move_next(&mut self) {
         // Head
         let head = self.parts_x_y.last().unwrap();
         // New position for head
@@ -117,27 +156,21 @@ impl Snake {
         let mut current_parts = self.parts_x_y[1..].to_vec();
         current_parts.push(new_pos);
         self.parts_x_y = current_parts;
-
-        for pos in &self.parts_x_y {
-            grid[pos.y as usize][pos.x as usize] = true;
-        }
-
-        self.board = grid;
-        grid
     }
 }
 
 fn main() {
-    let food = Pos { x: 8, y: 8 };
     let mut game = Game {
         score: 0,
-        next_food_target: food,
+        next_food_target: None,
+        board: [[Cell::EMPTY; COLS]; ROWS],
+        game_start_at: SystemTime::now(),
     };
     let snake = game.start();
-    read_input_from_terminal(snake);
+    read_input_from_terminal(game, snake);
 }
 
-fn read_input_from_terminal(mut snake: Snake) {
+fn read_input_from_terminal(mut game: Game, mut snake: Snake) {
     execute!(std::io::stdout()).unwrap();
     loop {
         crossterm::terminal::enable_raw_mode().unwrap();
@@ -151,26 +184,22 @@ fn read_input_from_terminal(mut snake: Snake) {
                         if snake.direction == Direction::LEFT || snake.direction == Direction::RIGHT
                         {
                             snake.set_direction(Direction::UP);
-                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('d') => {
                         if snake.direction == Direction::UP || snake.direction == Direction::DOWN {
                             snake.set_direction(Direction::RIGHT);
-                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('a') => {
                         if snake.direction == Direction::UP || snake.direction == Direction::DOWN {
                             snake.set_direction(Direction::LEFT);
-                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('s') => {
                         if snake.direction == Direction::LEFT || snake.direction == Direction::RIGHT
                         {
                             snake.set_direction(Direction::DOWN);
-                            graphics::draw(&snake.board);
                         }
                     }
                     KeyCode::Char('c') => {
@@ -183,11 +212,14 @@ fn read_input_from_terminal(mut snake: Snake) {
                     }
                     _ => {}
                 }
+                game.update_board(&snake);
+                graphics::draw(&game);
             }
         } else {
             // Either an event happened OR 500ms passed
             snake.move_next();
-            graphics::draw(&snake.board);
+            game.update_board(&snake);
+            graphics::draw(&game);
         }
     }
 }
