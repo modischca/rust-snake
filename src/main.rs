@@ -19,6 +19,7 @@ struct Pos {
 }
 
 impl Pos {
+    // Returns a new Pos with the next coordinates.
     pub fn next(&self, direction: &Direction) -> Pos {
         match direction {
             Direction::UP => Pos {
@@ -58,10 +59,11 @@ impl Pos {
 }
 struct Game {
     score: i32,
+    next_food_target: Pos,
 }
 
 impl Game {
-    pub fn start(self) -> Snake {
+    pub fn start(&mut self) -> Snake {
         let start_direction = Direction::RIGHT;
         let start_pos = Pos { x: 5, y: 5 };
         let mut parts: Vec<Pos> = vec![start_pos];
@@ -94,9 +96,8 @@ struct Snake {
 
 impl Snake {
     pub fn eat(&mut self) {
-        let head = self.parts_x_y.last().unwrap();
-        // Double head, but will be fixed in next move.
-        //self.parts_x_y.push((head.0, head.1));
+        // if head is at same position as food
+        // add score and length to snake
     }
 
     pub fn set_direction(&mut self, new_direction: Direction) {
@@ -111,6 +112,7 @@ impl Snake {
         // New position for head
         //let new_pos = calculate_next_x_y(head.clone(), &self.direction);
         let new_pos = head.next(&self.direction);
+        // Hvis hodet ender på en plass hvor det er mat, ta bort maten, og sett 10 poeng på spillet
         // New parts is eq to the old minus the last
         let mut current_parts = self.parts_x_y[1..].to_vec();
         current_parts.push(new_pos);
@@ -119,13 +121,18 @@ impl Snake {
         for pos in &self.parts_x_y {
             grid[pos.y as usize][pos.x as usize] = true;
         }
+
         self.board = grid;
         grid
     }
 }
 
 fn main() {
-    let game = Game { score: 0 };
+    let food = Pos { x: 8, y: 8 };
+    let mut game = Game {
+        score: 0,
+        next_food_target: food,
+    };
     let snake = game.start();
     read_input_from_terminal(snake);
 }
