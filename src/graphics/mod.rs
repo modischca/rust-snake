@@ -1,7 +1,11 @@
 use crate::Game;
 use crossterm::{terminal, ExecutableCommand};
 use snake::{COLS, ROWS};
-use std::io::{self};
+use std::{
+    io::{self},
+    thread::sleep,
+    time::Duration,
+};
 
 use crate::Cell;
 pub fn draw(game: &Game) {
@@ -45,4 +49,11 @@ pub fn draw(game: &Game) {
         output.push_str("\r\n");
     }
     print!("{}", output);
+}
+
+pub fn run_intro() {
+    loop {
+        sleep(Duration::from_millis(100));
+        println!("Morten");
+    }
 }
