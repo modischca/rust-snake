@@ -3,7 +3,6 @@ mod game;
 mod graphics;
 mod test;
 
-use engine::run;
 use game::enums::Cell;
 use game::game::Game;
 use snake::{COLS, ROWS};
@@ -17,6 +16,6 @@ fn main() {
         board: [[Cell::EMPTY; COLS]; ROWS],
         game_start_at: SystemTime::now(),
     };
-    let snake = game.start();
-    run(game, snake);
+    let snake = game.new();
+    engine::run(game, snake);
 }

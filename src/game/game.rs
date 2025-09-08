@@ -9,7 +9,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn start(&mut self) -> Snake {
+    pub fn new(&mut self) -> Snake {
         let start_direction = Direction::RIGHT;
         let start_pos = Pos { x: 5, y: 5 };
         let mut parts: Vec<Pos> = vec![start_pos];

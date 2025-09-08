@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod test {
+    use crate::game::enums::Direction;
+    use crate::game::Pos;
     use crate::*;
 
     #[test]
