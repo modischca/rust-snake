@@ -1,4 +1,5 @@
-use crate::{Direction, COLS, ROWS};
+use crate::game::Direction;
+use crate::{COLS, ROWS};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Pos {

@@ -1,4 +1,5 @@
-use crate::{Direction, Pos};
+use crate::game::enums::Direction;
+use crate::game::position::Pos;
 pub struct Snake {
     pub direction: Direction,
     pub parts_x_y: Vec<Pos>,

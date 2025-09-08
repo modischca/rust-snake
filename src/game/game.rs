@@ -1,4 +1,6 @@
-use crate::{Cell, Direction, Pos, Snake, COLS, ROWS};
+use crate::game::{Cell, Direction, Pos, Snake};
+use crate::{COLS, ROWS};
+
 pub struct Game {
     pub score: i32,
     pub next_food_target: Option<Pos>,
