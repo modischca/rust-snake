@@ -1,10 +1,10 @@
-use crate::game::{Direction, Game, Snake};
+use crate::game::{Direction, Game};
 use crate::graphics::draw;
 use crossterm::event::{Event, KeyCode};
 use crossterm::{event, execute};
 use std::time::Duration;
 
-pub fn run(mut game: Game, mut snake: Snake) {
+pub fn run(mut game: Game) {
     execute!(std::io::stdout()).unwrap();
     loop {
         crossterm::terminal::enable_raw_mode().unwrap();
@@ -13,19 +13,19 @@ pub fn run(mut game: Game, mut snake: Snake) {
         if event::poll(Duration::from_millis(100)).unwrap() {
             // Safe to unwrap because poll returned true
             if let Event::Key(key_event) = event::read().unwrap() {
-                let next_direction = handle_keystroke(&snake.direction, &key_event.code);
+                let next_direction = handle_keystroke(&game.snake.direction, &key_event.code);
                 if next_direction.is_some() {
-                    snake.set_direction(next_direction.unwrap());
-                    snake.move_next();
+                    game.snake.set_direction(next_direction.unwrap());
+                    game.snake.move_next();
                 }
 
-                game.update_board(&snake);
+                game.update_board();
                 draw(&game);
             }
         } else {
             // Either an event happened OR 500ms passed
-            snake.move_next();
-            game.update_board(&snake);
+            game.snake.move_next();
+            game.update_board();
             draw(&game);
         }
     }

@@ -1,9 +1,10 @@
 #[cfg(test)]
 mod test {
-    use crate::game::enums::Direction;
-    use crate::game::Pos;
-    use crate::*;
-
+    use crate::{
+        game::model::{BOARD_COLS, BOARD_ROWS},
+        *,
+    };
+    use game::{Direction, Pos};
     #[test]
     fn move_to_right() {
         let p = Pos { x: 1, y: 1 };
@@ -17,7 +18,7 @@ mod test {
     #[test]
     fn move_right_and_into_left() {
         let p = Pos {
-            x: COLS as i32,
+            x: BOARD_COLS as u16,
             y: 1,
         };
         let go_right = Direction::RIGHT;
@@ -33,7 +34,7 @@ mod test {
         let go_right = Direction::LEFT;
         let pos = p.next(&go_right);
         let expected_resut = Pos {
-            x: (COLS - 1) as i32,
+            x: (BOARD_COLS - 1) as u16,
             y: 1,
         };
         assert_eq!(pos.x, expected_resut.x);
@@ -54,7 +55,7 @@ mod test {
     fn move_down_into_top() {
         let p = Pos {
             x: 1,
-            y: (ROWS - 1) as i32,
+            y: (BOARD_ROWS - 1) as u16,
         };
         let go_down = Direction::DOWN;
         let pos = p.next(&go_down);
@@ -70,7 +71,7 @@ mod test {
         let pos = p.next(&go_up);
         let expected_resut = Pos {
             x: 1,
-            y: (ROWS - 1) as i32,
+            y: (BOARD_ROWS - 1) as u16,
         };
         assert_eq!(pos.x, expected_resut.x);
         assert_eq!(pos.y, expected_resut.y);

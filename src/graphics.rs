@@ -1,6 +1,5 @@
 use crate::Game;
 use crossterm::{terminal, ExecutableCommand};
-use snake::{COLS, ROWS};
 use std::{
     io::{self},
     thread::sleep,
