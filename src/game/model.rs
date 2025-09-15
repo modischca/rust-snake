@@ -1,5 +1,8 @@
-use crate::game::{Cell, Direction};
+use rusqlite::Error;
 
+use crate::db;
+use crate::game::types::GameStatus;
+use crate::game::{Cell, Direction};
 pub const BOARD_COLS: usize = 16;
 pub const BOARD_ROWS: usize = 16;
 use std::time::SystemTime;
@@ -10,6 +13,9 @@ pub struct Game {
     pub board: [[Cell; BOARD_COLS]; BOARD_ROWS],
     pub game_start_at: std::time::SystemTime,
     pub snake: Snake,
+    pub db_id: Option<u16>,
+    pub game_status: GameStatus,
+    pub player_name: String,
 }
 
 impl Game {
@@ -32,6 +38,17 @@ impl Game {
             board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
             game_start_at: SystemTime::now(),
             snake: snake,
+            db_id: None,
+            game_status: GameStatus::RUNNING,
+            player_name: "Morten".to_string(),
+        }
+    }
+
+    pub fn save(&mut self) {
+        if self.db_id.is_none() {
+            db::insert(self);
+        } else {
+            println!("Saving game....");
         }
     }
 
@@ -89,7 +106,7 @@ impl Pos {
                 y: if self.y < 1 {
                     (BOARD_COLS - 1) as u16
                 } else {
-                    &self.y - 1
+                    self.y - 1
                 },
             },
             Direction::LEFT => Pos {
@@ -97,7 +114,7 @@ impl Pos {
                 x: if self.x < 1 {
                     (BOARD_ROWS - 1) as u16
                 } else {
-                    &self.x - 1
+                    self.x - 1
                 },
             },
             Direction::RIGHT => Pos {
@@ -105,7 +122,7 @@ impl Pos {
                 x: if self.x >= (BOARD_COLS - 1) as u16 {
                     0
                 } else {
-                    &self.x + 1
+                    self.x + 1
                 },
             },
             Direction::DOWN => Pos {
@@ -113,7 +130,7 @@ impl Pos {
                 y: if self.y >= (BOARD_ROWS - 1) as u16 {
                     0
                 } else {
-                    &self.y + 1
+                    self.y + 1
                 },
             },
         }

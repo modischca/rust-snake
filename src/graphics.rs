@@ -1,5 +1,8 @@
 use crate::Game;
-use crossterm::{terminal, ExecutableCommand};
+use crossterm::style::{
+    Attribute, Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor,
+};
+use crossterm::{execute, terminal, ExecutableCommand};
 use std::{
     io::{self},
     thread::sleep,
@@ -50,6 +53,42 @@ pub fn draw(game: &Game) {
     print!("{}", output);
 }
 
+pub fn show_intro() {
+    let snake = r#"
+            /^\/^\
+        _|__|  O|
+\/     /~     \_/ \
+    \____|__________/  \
+        \_______      \
+                `\     \                 \
+                    |     |                  \
+                    /      /                    \
+                /     /                       \
+                /      /                         \ \
+                /     /                            \  \
+            /     /             _----_            \   \
+            /     /           _-~      ~-_         |   |
+            (      (        _-~    _--_    ~-_     _/   |
+            \      ~-____-~    _-~    ~-_    ~-_-~    /
+            ~-_           _-~          ~-_       _-~
+                ~--______-~                ~-___-~
+    "#;
+    execute!(
+        io::stdout(),
+        // Blue foreground
+        SetForegroundColor(Color::White),
+        // Print text
+        Print(snake),
+        Print(" "),
+        // Reset to default colors
+        SetForegroundColor(Color::Black),
+        SetBackgroundColor(Color::White),
+        Print("Morten's learning Rust game SNAKE"),
+        ResetColor
+    );
+    println!("");
+    println!("");
+}
 pub fn run_intro() {
     loop {
         sleep(Duration::from_millis(100));
