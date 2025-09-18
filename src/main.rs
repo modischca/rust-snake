@@ -6,15 +6,11 @@ mod graphics;
 mod test;
 use game::{Cell, Game};
 use rusqlite::Error;
-use std::io;
+use std::io::{self, Error as stdError};
 fn main() {
-    graphics::show_intro();
-    if db::is_active_game() == false {
-        let mut game = Game::new();
-        game.save();
-        engine::run(game);
-    }
-    if (recover_prev_game()) {
+    let name = graphics::show_intro();
+    let player_name = greet().unwrap();
+    if (db::get(player_name) && recover_prev_game()) {
         let mut game = Game::new();
         game.save();
         engine::run(game);
@@ -23,6 +19,14 @@ fn main() {
         game.save();
         engine::run(game);
     }
+}
+
+fn greet() -> Result<String, stdError> {
+    println!("What is your name?");
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    let res = input.trim();
+    Ok(res.to_string())
 }
 
 fn recover_prev_game() -> bool {

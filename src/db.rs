@@ -27,7 +27,29 @@ pub fn init() -> Result<usize, rusqlite::Error> {
     res
 }
 
-pub fn update(game: &Game) {}
+pub fn get(player_name: String) -> bool {
+    println!("Getting game");
+    true
+}
+
+pub fn update(game: &Game) -> Result<(), rusqlite::Error> {
+    let conn = Connection::open("snake.db")?;
+
+    let update_query = "
+        UPDATE GAME
+        SET
+            Score = ?1,
+            SnakePosX = ?2,
+            SnakePosY = ?3
+        WHERE
+            Id = ?4
+    ";
+    let x = &game.snake.parts_x_y[1].x.to_string();
+    let y = &game.snake.parts_x_y[1].y.to_string();
+
+    conn.execute(update_query, params![&game.score, x, y, &game.db_id]);
+    Ok(())
+}
 
 pub fn insert(game: &mut Game) -> Result<(), rusqlite::Error> {
     let conn = Connection::open("snake.db")?;
@@ -60,8 +82,4 @@ pub fn insert(game: &mut Game) -> Result<(), rusqlite::Error> {
     let row_id = conn.last_insert_rowid();
     game.db_id = Some(row_id as u16); // or whatever type your db_id is
     Ok(())
-}
-
-pub fn is_active_game() -> bool {
-    true
 }

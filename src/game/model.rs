@@ -48,7 +48,14 @@ impl Game {
         if self.db_id.is_none() {
             db::insert(self);
         } else {
-            println!("Saving game....");
+            match db::update(&self) {
+                Err(e) => {
+                    println!("Unable to save due to: {}", e);
+                }
+                Ok(()) => {
+                    println!("Game saved.");
+                }
+            }
         }
     }
 
