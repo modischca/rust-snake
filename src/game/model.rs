@@ -59,27 +59,39 @@ impl Game {
         }
     }
 
-    pub fn update_board(&mut self) {
-        // The new grid
-        if (self.next_food_target.is_some()) {
-            let a = self.snake.parts_x_y.iter().find(|p| {
-                p.x == self.next_food_target.unwrap().x && p.y == self.next_food_target.unwrap().y
-            });
-            if a.is_some() {
+    pub fn set_score(&mut self) {
+        // Er det noe mat på brettet?
+
+        if let Some(food_pos) = self.next_food_target {
+            // Er noen av delene til slangen på samme pos som maten?
+            let head_pos = self
+                .snake
+                .parts_x_y
+                .last()
+                .expect("Game error, there is no snake position.");
+            if (head_pos.x == food_pos.x && head_pos.y == food_pos.y) {
                 self.score = self.score + 10;
                 self.next_food_target = None;
             }
         }
+    }
 
+    pub fn update_board(&mut self) {
         let mut grid: [[Cell; BOARD_COLS]; BOARD_ROWS] = [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS];
 
         for pos in &self.snake.parts_x_y {
             grid[pos.y as usize][pos.x as usize] = Cell::SNAKE_BODY;
         }
-        let head = &self.snake.parts_x_y.iter().last().unwrap();
+        let head = self
+            .snake
+            .parts_x_y
+            .last()
+            .expect("Snake must have a head pisition.");
         grid[head.y as usize][head.x as usize] = Cell::SNAKE_HEAD;
 
-        if self.next_food_target.is_none() {
+        if let Some(next_food_target) = self.next_food_target {
+            grid[next_food_target.y as usize][next_food_target.x as usize] = Cell::FOOD;
+        } else {
             // Add food
             let x = rand::random_range(0..BOARD_ROWS - 1);
             let y = rand::random_range(0..BOARD_COLS - 1);
@@ -89,9 +101,6 @@ impl Game {
             };
             self.next_food_target = Some(food_at_pos);
             grid[y][x] = Cell::FOOD;
-        } else {
-            grid[self.next_food_target.unwrap().y as usize]
-                [self.next_food_target.unwrap().x as usize] = Cell::FOOD;
         }
 
         self.board = grid;
@@ -154,13 +163,11 @@ impl Snake {
     }
 
     pub fn move_next(&mut self) {
-        // Head
+        // Ta bort bakerste posisjon, og legg til nytt pos på hodet.
         let head = self.parts_x_y.last().unwrap();
-        // New position for head
-        //let new_pos = calculate_next_x_y(head.clone(), &self.direction);
+
         let new_pos = head.next(&self.direction);
-        // Hvis hodet ender på en plass hvor det er mat, ta bort maten, og sett 10 poeng på spillet
-        // New parts is eq to the old minus the last
+
         let mut current_parts = self.parts_x_y[1..].to_vec();
         current_parts.push(new_pos);
         self.parts_x_y = current_parts;
