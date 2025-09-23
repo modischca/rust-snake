@@ -46,7 +46,9 @@ pub fn run(mut game: Game) {
 
 fn quit() {
     println!("Quitting...");
-    crossterm::terminal::disable_raw_mode().unwrap();
+    if let Err(e) = crossterm::terminal::disable_raw_mode() {
+        println!("Unable to disable raw mode.");
+    }
     std::process::exit(0);
 }
 

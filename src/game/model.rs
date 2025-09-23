@@ -164,7 +164,7 @@ impl Snake {
 
     pub fn move_next(&mut self) {
         // Ta bort bakerste posisjon, og legg til nytt pos på hodet.
-        let head = self.parts_x_y.last().unwrap();
+        let head = self.parts_x_y.last().expect("Snake always has a head");
 
         let new_pos = head.next(&self.direction);
 
