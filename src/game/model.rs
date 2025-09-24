@@ -19,7 +19,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(player_name: Option<String>) -> Self {
         let start_direction = Direction::RIGHT;
         let start_pos = Pos { x: 5, y: 5 };
         let mut parts: Vec<Pos> = vec![start_pos];
@@ -32,6 +32,7 @@ impl Game {
             direction: Direction::RIGHT,
             parts_x_y: parts,
         };
+        let pn = player_name.unwrap_or("Unknown".to_string());
         Self {
             score: 0,
             next_food_target: None,
@@ -40,7 +41,7 @@ impl Game {
             snake: snake,
             db_id: None,
             game_status: GameStatus::RUNNING,
-            player_name: "Morten".to_string(),
+            player_name: pn,
         }
     }
 
@@ -59,18 +60,35 @@ impl Game {
         }
     }
 
+    pub fn load_existing(player_name: String) -> Self {
+        match db::get(player_name) {
+            Ok(game) => game,
+            Err(e) => {
+                println!("Unable to find game. Starting a new one...");
+                Game::new(None)
+            }
+        }
+    }
+
     pub fn set_score(&mut self) {
         // Er det noe mat på brettet?
-
-        if let Some(food_pos) = self.next_food_target {
-            // Er noen av delene til slangen på samme pos som maten?
-            let head_pos = self
-                .snake
-                .parts_x_y
-                .last()
-                .expect("Game error, there is no snake position.");
-            if (head_pos.x == food_pos.x && head_pos.y == food_pos.y) {
-                self.score = self.score + 10;
+        // Reafactor using match
+        //
+        /*if let Some(food_pos) = self.next_food_target {
+            if let Some(head_pos) = self.snake.parts_x_y.last() {
+                if (head_pos.x == food_pos.x && head_pos.y == food_pos.y) {
+                    self.score = self.score + 10;
+                    self.next_food_target = None;
+                }
+            } else {
+                eprintln!("Unable to update score.")
+            }
+        }*/
+        if let (Some(food_pos), Some(head_pos)) =
+            (self.next_food_target, self.snake.parts_x_y.last())
+        {
+            if head_pos.x == food_pos.x && head_pos.y == food_pos.y {
+                self.score += 10;
                 self.next_food_target = None;
             }
         }
@@ -172,4 +190,6 @@ impl Snake {
         current_parts.push(new_pos);
         self.parts_x_y = current_parts;
     }
+
+    pub fn grow(&mut self) {}
 }

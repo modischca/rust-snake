@@ -1,4 +1,5 @@
-use crate::game::{Game, GameStatus};
+use crate::game::model::{Snake, BOARD_COLS, BOARD_ROWS};
+use crate::game::{Cell, Direction, Game, GameStatus, Pos};
 use chrono::Utc;
 use rusqlite::{params, Connection, Error, Result};
 use std::time::SystemTime;
@@ -27,16 +28,44 @@ pub fn init() -> Result<usize, rusqlite::Error> {
     res
 }
 
-pub fn get(player_name: String) -> bool {
-    println!("Getting game");
-    true
+pub fn get(player_name: String) -> Result<Game, rusqlite::Error> {
+    let conn = Connection::open("snake.db")?;
+    let select_query = "Select * from GAME WHERE PlayerName=?1";
+
+    // Select rows into struct
+    let mut stmt = conn.prepare("SELECT ID, CreatedAt, PlayerName, Score, LastUpdatedAt,Status,SnakePosX,SnakePosY FROM Game Order by ID desc LIMIT 0,1")?;
+    stmt.query_row([], |row| {
+        let start_direction = Direction::DOWN;
+        let start_pos = Pos { x: 0, y: 0 };
+        let mut parts: Vec<Pos> = vec![start_pos];
+        let size = 6;
+        for _i in 0..size {
+            let pos = parts[_i].next(&start_direction);
+            parts.push(pos);
+        }
+
+        let g = Game {
+            db_id: row.get(0)?,
+            score: row.get(3)?,
+            game_start_at: SystemTime::now(),
+            player_name: player_name.into(),
+            game_status: GameStatus::RUNNING,
+            next_food_target: None,
+            board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
+            snake: Snake {
+                direction: Direction::RIGHT,
+                parts_x_y: parts,
+            },
+        };
+        Ok(g)
+    })
 }
 
 pub fn update(game: &Game) -> Result<(), rusqlite::Error> {
     let conn = Connection::open("snake.db")?;
 
     let update_query = "
-        UPDATE GAME
+        UPDATE Game
         SET
             Score = ?1,
             SnakePosX = ?2,

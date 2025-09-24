@@ -1,4 +1,3 @@
-Make snake grow when it eat
-Enable update game
-Read players name
+Finish get game.
+Fix hard kodet navn
 Refactor unwrap, to use pattern matching

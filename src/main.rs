@@ -18,12 +18,17 @@ fn main() {
         }
     };
 
-    if (got_name && db::get(player_name) && recover_prev_game()) {
-        let mut game = Game::new();
-        game.save();
-        engine::run(game);
+    if (got_name) {
+        if (prompt_recover_prev_game()) {
+            let game = Game::load_existing(player_name);
+            engine::run(game);
+        } else {
+            let mut game = Game::new(None);
+            game.save();
+            engine::run(game);
+        }
     } else {
-        let mut game = Game::new();
+        let mut game = Game::new(None);
         game.save();
         engine::run(game);
     }
@@ -36,7 +41,7 @@ fn greet() -> Result<String, stdError> {
     Ok(input.trim().to_string())
 }
 
-fn recover_prev_game() -> bool {
+fn prompt_recover_prev_game() -> bool {
     println!("Do you want to continue previous game? [Y/N]");
     let mut input = String::new();
     if io::stdin().read_line(&mut input).is_err() {
