@@ -27,7 +27,6 @@ pub fn run(mut game: Game) {
                     Some(KeyStrokeResult::SetNewDirection(direction)) => {
                         game.snake.set_direction(direction);
                         game.snake.move_next();
-                        game.set_score();
                     }
                     _ => {}
                 }
@@ -37,7 +36,6 @@ pub fn run(mut game: Game) {
             }
         } else {
             game.snake.move_next();
-            game.set_score();
             game.update_board();
             draw(&game);
         }

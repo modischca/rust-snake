@@ -20,25 +20,13 @@ pub struct Game {
 
 impl Game {
     pub fn new(player_name: Option<String>) -> Self {
-        let start_direction = Direction::RIGHT;
-        let start_pos = Pos { x: 5, y: 5 };
-        let mut parts: Vec<Pos> = vec![start_pos];
-        let size = 6;
-        for _i in 0..size {
-            let pos = parts[_i].next(&start_direction);
-            parts.push(pos);
-        }
-        let snake = Snake {
-            direction: Direction::RIGHT,
-            parts_x_y: parts,
-        };
         let pn = player_name.unwrap_or("Unknown".to_string());
         Self {
             score: 0,
             next_food_target: None,
             board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
             game_start_at: SystemTime::now(),
-            snake: snake,
+            snake: Snake::new(None),
             db_id: None,
             game_status: GameStatus::RUNNING,
             player_name: pn,
@@ -70,47 +58,36 @@ impl Game {
         }
     }
 
-    pub fn set_score(&mut self) {
-        // Er det noe mat på brettet?
-        // Reafactor using match
-        //
-        /*if let Some(food_pos) = self.next_food_target {
-            if let Some(head_pos) = self.snake.parts_x_y.last() {
-                if (head_pos.x == food_pos.x && head_pos.y == food_pos.y) {
-                    self.score = self.score + 10;
-                    self.next_food_target = None;
-                }
-            } else {
-                eprintln!("Unable to update score.")
-            }
-        }*/
+    pub fn update_score(&mut self) {
         if let (Some(food_pos), Some(head_pos)) =
             (self.next_food_target, self.snake.parts_x_y.last())
         {
             if head_pos.x == food_pos.x && head_pos.y == food_pos.y {
                 self.score += 10;
                 self.next_food_target = None;
+                self.snake.grow();
             }
         }
     }
 
     pub fn update_board(&mut self) {
+        self.update_score();
         let mut grid: [[Cell; BOARD_COLS]; BOARD_ROWS] = [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS];
 
-        for pos in &self.snake.parts_x_y {
-            grid[pos.y as usize][pos.x as usize] = Cell::SNAKE_BODY;
+        for (i, pos) in self.snake.parts_x_y.iter().enumerate() {
+            if i == &self.snake.length() - 1 {
+                grid[pos.y as usize][pos.x as usize] = Cell::SNAKE_HEAD;
+            } else {
+                grid[pos.y as usize][pos.x as usize] = Cell::SNAKE_BODY;
+            }
         }
-        let head = self
-            .snake
-            .parts_x_y
-            .last()
-            .expect("Snake must have a head pisition.");
-        grid[head.y as usize][head.x as usize] = Cell::SNAKE_HEAD;
 
         if let Some(next_food_target) = self.next_food_target {
+            // Place food at board if food added to the game.
             grid[next_food_target.y as usize][next_food_target.x as usize] = Cell::FOOD;
         } else {
-            // Add food
+            // Add next food position to the game, if there is no food.
+            // Food will be drawn on board on next iteration.
             let x = rand::random_range(0..BOARD_ROWS - 1);
             let y = rand::random_range(0..BOARD_COLS - 1);
             let food_at_pos = Pos {
@@ -118,7 +95,6 @@ impl Game {
                 y: y as u16,
             };
             self.next_food_target = Some(food_at_pos);
-            grid[y][x] = Cell::FOOD;
         }
 
         self.board = grid;
@@ -191,5 +167,29 @@ impl Snake {
         self.parts_x_y = current_parts;
     }
 
-    pub fn grow(&mut self) {}
+    pub fn grow(&mut self) {
+        let current_size = self.length();
+        let head = self.parts_x_y.last().expect("Snake always has a head");
+        let new_pos = head.next(&self.direction);
+        self.parts_x_y.push(new_pos);
+    }
+
+    pub fn length(&self) -> usize {
+        self.parts_x_y.len()
+    }
+
+    pub fn new(length: Option<usize>) -> Self {
+        let start_direction = Direction::RIGHT;
+        let start_pos = Pos { x: 5, y: 5 };
+        let mut parts: Vec<Pos> = vec![start_pos];
+        let size = length.unwrap_or(6);
+        for _i in 0..size {
+            let pos = parts[_i].next(&start_direction);
+            parts.push(pos);
+        }
+        Self {
+            direction: Direction::RIGHT,
+            parts_x_y: parts,
+        }
+    }
 }
