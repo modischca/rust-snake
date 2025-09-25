@@ -13,8 +13,6 @@ pub fn run(mut game: Game) {
     execute!(std::io::stdout()).unwrap();
     loop {
         crossterm::terminal::enable_raw_mode().unwrap();
-
-        // Wait at most 500ms for an event
         if event::poll(Duration::from_millis(100)).unwrap() {
             // Safe to unwrap because poll returned true
             if let Event::Key(key_event) = event::read().unwrap() {

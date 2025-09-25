@@ -3,8 +3,8 @@ use rusqlite::Error;
 use crate::db;
 use crate::game::types::GameStatus;
 use crate::game::{Cell, Direction};
-pub const BOARD_COLS: usize = 16;
-pub const BOARD_ROWS: usize = 16;
+pub const BOARD_COLS: usize = 32;
+pub const BOARD_ROWS: usize = 32;
 use std::time::SystemTime;
 
 pub struct Game {
@@ -48,13 +48,10 @@ impl Game {
         }
     }
 
-    pub fn load_existing(player_name: String) -> Self {
+    pub fn load_existing(player_name: String) -> Option<Game> {
         match db::get(player_name) {
-            Ok(game) => game,
-            Err(e) => {
-                println!("Unable to find game. Starting a new one...");
-                Game::new(None)
-            }
+            Ok(game) => Some(game),
+            Err(e) => None,
         }
     }
 
@@ -178,11 +175,15 @@ impl Snake {
         self.parts_x_y.len()
     }
 
-    pub fn new(length: Option<usize>) -> Self {
+    pub fn new(score: Option<usize>) -> Self {
         let start_direction = Direction::RIGHT;
         let start_pos = Pos { x: 5, y: 5 };
         let mut parts: Vec<Pos> = vec![start_pos];
-        let size = length.unwrap_or(6);
+        let mut size = score.unwrap_or(0);
+        if (size > 0) {
+            size = size / 10;
+        }
+        size = size + 6;
         for _i in 0..size {
             let pos = parts[_i].next(&start_direction);
             parts.push(pos);

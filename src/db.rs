@@ -30,35 +30,27 @@ pub fn init() -> Result<usize, rusqlite::Error> {
 
 pub fn get(player_name: String) -> Result<Game, rusqlite::Error> {
     let conn = Connection::open("snake.db")?;
-    let select_query = "Select * from GAME WHERE PlayerName=?1";
 
     // Select rows into struct
-    let mut stmt = conn.prepare("SELECT ID, CreatedAt, PlayerName, Score, LastUpdatedAt,Status,SnakePosX,SnakePosY FROM Game Order by ID desc LIMIT 0,1")?;
-    stmt.query_row([], |row| {
-        let start_direction = Direction::DOWN;
-        let start_pos = Pos { x: 0, y: 0 };
-        let mut parts: Vec<Pos> = vec![start_pos];
-        let size = 6;
-        for _i in 0..size {
-            let pos = parts[_i].next(&start_direction);
-            parts.push(pos);
-        }
-
-        let g = Game {
-            db_id: row.get(0)?,
-            score: row.get(3)?,
-            game_start_at: SystemTime::now(),
-            player_name: player_name.into(),
-            game_status: GameStatus::RUNNING,
-            next_food_target: None,
-            board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
-            snake: Snake {
-                direction: Direction::RIGHT,
-                parts_x_y: parts,
-            },
-        };
-        Ok(g)
-    })
+    conn.query_row(
+        "SELECT ID, CreatedAt, PlayerName, Score, LastUpdatedAt, Status, SnakePosX, SnakePosY
+         FROM Game WHERE PlayerName = ?1 ORDER BY ID DESC LIMIT 1",
+        [player_name.to_string()],
+        |row| {
+            let score = row.get(3)?;
+            let g = Game {
+                db_id: row.get(0)?,
+                score: score,
+                game_start_at: SystemTime::now(),
+                player_name: player_name.into(),
+                game_status: GameStatus::RUNNING,
+                next_food_target: None,
+                board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
+                snake: Snake::new(Some(score as usize)),
+            };
+            Ok(g)
+        },
+    )
 }
 
 pub fn update(game: &Game) -> Result<(), rusqlite::Error> {

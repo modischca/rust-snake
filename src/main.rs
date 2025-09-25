@@ -18,20 +18,15 @@ fn main() {
         }
     };
 
-    if (got_name) {
-        if (prompt_recover_prev_game()) {
-            let game = Game::load_existing(player_name);
-            engine::run(game);
-        } else {
-            let mut game = Game::new(None);
-            game.save();
-            engine::run(game);
+    if let (Some(current_game), input_name) = ((Game::load_existing(player_name)), got_name) {
+        if prompt_recover_prev_game(&current_game) == true {
+            engine::run(current_game);
         }
-    } else {
-        let mut game = Game::new(None);
-        game.save();
-        engine::run(game);
     }
+
+    let mut game = Game::new(None);
+    game.save();
+    engine::run(game);
 }
 
 fn greet() -> Result<String, stdError> {
@@ -41,8 +36,12 @@ fn greet() -> Result<String, stdError> {
     Ok(input.trim().to_string())
 }
 
-fn prompt_recover_prev_game() -> bool {
-    println!("Do you want to continue previous game? [Y/N]");
+fn prompt_recover_prev_game(game: &Game) -> bool {
+    println!(
+        "Welcome back {}, Do you want to continue previous game? You current score is {} [Y/N]",
+        game.player_name,
+        game.score.to_string()
+    );
     let mut input = String::new();
     if io::stdin().read_line(&mut input).is_err() {
         return false;
