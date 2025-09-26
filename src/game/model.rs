@@ -75,9 +75,9 @@ impl Game {
 
         for (i, pos) in self.snake.parts_x_y.iter().enumerate() {
             if i == &self.snake.length() - 1 {
-                grid[pos.y as usize][pos.x as usize] = Cell::SNAKE_HEAD;
+                grid[pos.y as usize][pos.x as usize] = Cell::SNAKEHEAD;
             } else {
-                grid[pos.y as usize][pos.x as usize] = Cell::SNAKE_BODY;
+                grid[pos.y as usize][pos.x as usize] = Cell::SNAKEBODY;
             }
         }
 

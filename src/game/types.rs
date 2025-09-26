@@ -1,8 +1,8 @@
 #[derive(Clone, Copy)]
 pub enum Cell {
     EMPTY,
-    SNAKE_BODY,
-    SNAKE_HEAD,
+    SNAKEBODY,
+    SNAKEHEAD,
     FOOD,
 }
 

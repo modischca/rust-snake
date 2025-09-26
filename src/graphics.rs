@@ -40,10 +40,10 @@ pub fn draw(game: &Game) {
                 Cell::EMPTY => {
                     output.push_str(&format!("{}", empty_block));
                 }
-                Cell::SNAKE_BODY => {
+                Cell::SNAKEBODY => {
                     output.push_str(&format!("{}", snake_body));
                 }
-                Cell::SNAKE_HEAD => {
+                Cell::SNAKEHEAD => {
                     output.push_str(&format!("{}", snake_head));
                 }
                 Cell::FOOD => {
