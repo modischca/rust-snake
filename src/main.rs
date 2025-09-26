@@ -20,13 +20,14 @@ fn main() {
 
     if let (Some(current_game), input_name) = ((Game::load_existing(player_name)), got_name) {
         if prompt_recover_prev_game(&current_game) == true {
+            println!("Starting game at score {}", &current_game.score.to_string());
             engine::run(current_game);
         }
+    } else {
+        let mut game = Game::new(None);
+        game.save();
+        engine::run(game);
     }
-
-    let mut game = Game::new(None);
-    game.save();
-    engine::run(game);
 }
 
 fn greet() -> Result<String, stdError> {

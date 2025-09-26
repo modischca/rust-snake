@@ -1,12 +1,12 @@
-use rusqlite::Error;
-
 use crate::db;
 use crate::game::types::GameStatus;
 use crate::game::{Cell, Direction};
-pub const BOARD_COLS: usize = 32;
-pub const BOARD_ROWS: usize = 32;
+use rusqlite::Error;
+pub const BOARD_COLS: usize = 16;
+pub const BOARD_ROWS: usize = 16;
+use std::error::Error as stdErr;
+use std::fmt::{self, Display, Formatter};
 use std::time::SystemTime;
-
 pub struct Game {
     pub score: u16,
     pub next_food_target: Option<Pos>,
@@ -37,6 +37,7 @@ impl Game {
         if self.db_id.is_none() {
             db::insert(self);
         } else {
+            println!("Saving game");
             match db::update(&self) {
                 Err(e) => {
                     println!("Unable to save due to: {}", e);
@@ -56,14 +57,15 @@ impl Game {
     }
 
     pub fn update_score(&mut self) {
-        if let (Some(food_pos), Some(head_pos)) =
-            (self.next_food_target, self.snake.parts_x_y.last())
-        {
-            if head_pos.x == food_pos.x && head_pos.y == food_pos.y {
-                self.score += 10;
-                self.next_food_target = None;
-                self.snake.grow();
-            }
+        // Just tryin the let else pattern.
+        let (Some(food_pos), Some(head_pos)) = (self.next_food_target, self.snake.parts_x_y.last())
+        else {
+            return ();
+        };
+        if head_pos.x == food_pos.x && head_pos.y == food_pos.y {
+            self.score += 10;
+            self.next_food_target = None;
+            self.snake.grow();
         }
     }
 
@@ -153,15 +155,23 @@ impl Snake {
         self.direction = new_direction;
     }
 
-    pub fn move_next(&mut self) {
+    pub fn move_next(&mut self) -> Result<(), GameErr> {
         // Ta bort bakerste posisjon, og legg til nytt pos på hodet.
         let head = self.parts_x_y.last().expect("Snake always has a head");
-
         let new_pos = head.next(&self.direction);
 
         let mut current_parts = self.parts_x_y[1..].to_vec();
+
+        if current_parts
+            .iter()
+            .any(|f| f.x == new_pos.x && f.y == new_pos.y)
+        {
+            return Err(GameErr::SnakeCrashedIntoItself);
+        }
+
         current_parts.push(new_pos);
         self.parts_x_y = current_parts;
+        Ok(())
     }
 
     pub fn grow(&mut self) {
@@ -194,3 +204,19 @@ impl Snake {
         }
     }
 }
+
+#[derive(Debug)]
+pub enum GameErr {
+    SnakeCrashedIntoItself,
+}
+
+impl Display for GameErr {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            GameErr::SnakeCrashedIntoItself => {
+                write!(f, "Illegal move. Snake coalition.")
+            }
+        }
+    }
+}
+impl stdErr for GameErr {}

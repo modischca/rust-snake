@@ -1,6 +1,6 @@
 use crate::Game;
 use crossterm::style::{
-    Attribute, Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor,
+    Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
 };
 use crossterm::{execute, terminal, ExecutableCommand};
 use std::{
@@ -21,6 +21,7 @@ pub fn draw(game: &Game) {
     let snake_head = '🟢';
     let food = '🍔';
     let mut output = String::from("");
+    let pos = &game.snake.parts_x_y[&game.snake.parts_x_y.len() - 1];
     output.push_str(&format!("Morten (Learn Rust) Snake"));
     output.push_str("\r\n");
     output.push_str("\r\n");
@@ -30,6 +31,8 @@ pub fn draw(game: &Game) {
     output.push_str("\r\n");
     output.push_str("\r\n");
     output.push_str(&format!("Score: {}", game.score));
+    output.push_str(&format!("         "));
+    output.push_str(&format!("Snake at: {},{}", pos.x, pos.y));
     output.push_str("\r\n");
     for row in datagrid.iter() {
         for &cell in row.iter() {
@@ -76,14 +79,12 @@ pub fn show_intro() {
     execute!(
         io::stdout(),
         // Blue foreground
-        SetForegroundColor(Color::White),
+        SetForegroundColor(Color::Blue),
         // Print text
         Print(snake),
         Print(" "),
         // Reset to default colors
-        SetForegroundColor(Color::Black),
-        SetBackgroundColor(Color::White),
-        Print("Morten's learning Rust game SNAKE"),
+        Print("       Morten's learning Rust game SNAKE          "),
         ResetColor
     );
     println!("");
