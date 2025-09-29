@@ -1,7 +1,7 @@
 use crate::db;
+use crate::errors::{GameErr, GameResult};
 use crate::game::types::GameStatus;
 use crate::game::{Cell, Direction};
-use rusqlite::Error;
 pub const BOARD_COLS: usize = 16;
 pub const BOARD_ROWS: usize = 16;
 use std::error::Error as stdErr;
@@ -155,7 +155,7 @@ impl Snake {
         self.direction = new_direction;
     }
 
-    pub fn move_next(&mut self) -> Result<(), GameErr> {
+    pub fn move_next(&mut self) -> GameResult<()> {
         // Ta bort bakerste posisjon, og legg til nytt pos på hodet.
         let head = self.parts_x_y.last().expect("Snake always has a head");
         let new_pos = head.next(&self.direction);
@@ -204,19 +204,3 @@ impl Snake {
         }
     }
 }
-
-#[derive(Debug)]
-pub enum GameErr {
-    SnakeCrashedIntoItself,
-}
-
-impl Display for GameErr {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            GameErr::SnakeCrashedIntoItself => {
-                write!(f, "Illegal move. Snake coalition.")
-            }
-        }
-    }
-}
-impl stdErr for GameErr {}

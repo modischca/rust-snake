@@ -1,15 +1,22 @@
 #![allow(unused)] // Remove later
+use std::io::Write;
 mod db;
 mod engine;
+mod errors;
 mod game;
 mod graphics;
 mod test;
+use crate::errors::GameErr;
 use game::{Cell, Game};
 use rusqlite::Error;
 use std::io::{self, Error as stdError};
+
 fn main() {
     let name = graphics::show_intro();
+    setup_game();
+}
 
+fn setup_game() {
     let (player_name, got_name) = match greet() {
         Ok(name) => (name, true),
         Err(e) => {
@@ -21,13 +28,38 @@ fn main() {
     if let (Some(current_game), _) = ((Game::load_existing(player_name)), got_name) {
         if prompt_recover_prev_game(&current_game) == true {
             println!("Starting game at score {}", &current_game.score.to_string());
-            engine::run(current_game);
+            run(current_game);
         }
     }
 
+    println!("Starting new game");
     let mut game = Game::new(None);
     game.save();
-    engine::run(game);
+    run(game);
+}
+
+fn run(game: Game) {
+    if let Err(e) = engine::run(game) {
+        handle_game_error(e);
+    } else {
+        quit();
+    }
+}
+
+fn handle_game_error(e: GameErr) {
+    if crossterm::terminal::disable_raw_mode().is_err() {
+        eprintln!("Unable to disable raw mode.");
+    }
+    match e {
+        GameErr::SnakeCrashedIntoItself => {
+            println!("Game over.");
+        }
+        _ => {
+            println!("Unhandled error. Terminating.");
+        }
+    }
+    io::stdout().flush().ok();
+    quit();
 }
 
 fn greet() -> Result<String, stdError> {
@@ -52,4 +84,9 @@ fn prompt_recover_prev_game(game: &Game) -> bool {
         "Y" => true,
         _ => false,
     }
+}
+
+fn quit() {
+    println!("Game shut down.");
+    std::process::exit(0);
 }

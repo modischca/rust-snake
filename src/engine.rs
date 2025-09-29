@@ -1,5 +1,6 @@
 use crate::db;
-use crate::game::model::{GameErr, Snake};
+use crate::errors::{GameErr, GameResult};
+use crate::game::model::Snake;
 use crate::game::{Direction, Game, GameStatus};
 use crate::graphics::draw;
 use crossterm::event::{Event, KeyCode};
@@ -10,7 +11,7 @@ enum KeyStrokeResult {
     SetNewDirection(Direction),
     Quit,
 }
-pub fn run(mut game: Game) {
+pub fn run(mut game: Game) -> GameResult<()> {
     execute!(std::io::stdout()).unwrap();
     loop {
         crossterm::terminal::enable_raw_mode().unwrap();
@@ -26,7 +27,7 @@ pub fn run(mut game: Game) {
                         if (game.score > 0) {
                             game.save();
                         }
-                        quit();
+                        return Ok(()); // Quit the game
                     }
                     Some(KeyStrokeResult::SetNewDirection(direction)) => {
                         game.snake.set_direction(direction);
@@ -34,34 +35,15 @@ pub fn run(mut game: Game) {
                     }
                     _ => {}
                 }
-
                 game.update_board();
                 draw(&game);
             }
         } else {
-            if let Err(e) = game.snake.move_next() {
-                if crossterm::terminal::disable_raw_mode().is_err() {
-                    println!("Unable to disable raw mode.");
-                }
-                match e {
-                    GameErr::SnakeCrashedIntoItself => {
-                        println!("Game over.");
-                    }
-                    _ => {
-                        println!("Unhandled error. Terminating.");
-                    }
-                }
-                quit();
-            }
+            game.snake.move_next()?;
             game.update_board();
             draw(&game);
         }
     }
-}
-
-fn quit() {
-    println!("Game shut down.");
-    std::process::exit(0);
 }
 
 fn handle_keystroke(current_direction: &Direction, key_code: &KeyCode) -> Option<KeyStrokeResult> {
