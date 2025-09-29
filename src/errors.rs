@@ -12,9 +12,6 @@ pub enum Error {
 pub enum GameErr {
     #[error("Illigal move. Snake coalition")]
     SnakeCrashedIntoItself,
-
-    #[error("QuitGame")]
-    QuitGame,
 }
 
 pub type GameResult<T> = std::result::Result<T, GameErr>;

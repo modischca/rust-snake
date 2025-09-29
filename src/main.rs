@@ -28,17 +28,17 @@ fn setup_game() {
     if let (Some(current_game), _) = ((Game::load_existing(player_name)), got_name) {
         if prompt_recover_prev_game(&current_game) == true {
             println!("Starting game at score {}", &current_game.score.to_string());
-            run(current_game);
+            play(current_game);
         }
     }
 
     println!("Starting new game");
-    let mut game = Game::new(None);
-    game.save();
-    run(game);
+    let mut new_game = Game::new(None);
+    new_game.save();
+    play(new_game);
 }
 
-fn run(game: Game) {
+fn play(game: Game) {
     if let Err(e) = engine::run(game) {
         handle_game_error(e);
     } else {
