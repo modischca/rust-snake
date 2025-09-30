@@ -5,13 +5,17 @@ mod engine;
 mod errors;
 mod game;
 mod graphics;
+mod logger;
 mod test;
 use crate::errors::GameErr;
 use game::{Cell, Game};
+use logger::{log, Log};
 use rusqlite::Error;
 use std::io::{self, Error as stdError};
-
 fn main() {
+    if let Err(e) = logger::setup_logger() {
+        println!("Unable to initlaize logger. Reason: {}", e);
+    }
     let name = graphics::show_intro();
     setup_game();
 }
@@ -39,6 +43,7 @@ fn setup_game() {
 }
 
 fn play(game: Game) {
+    log(Log::INFO("New game started".into()));
     if let Err(e) = engine::run(game) {
         handle_game_error(e);
     } else {

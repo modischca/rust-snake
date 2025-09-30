@@ -1,6 +1,5 @@
 Mat må ikke havne på en posisjon som slangen er
 Finish get game.
 Fix hard kodet navn
-Refactor unwrap, to use pattern matching
 2 player
 Handle GameOver
