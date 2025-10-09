@@ -1,7 +1,7 @@
 use crate::game::model::{Snake, BOARD_COLS, BOARD_ROWS};
-use crate::game::{Cell, Direction, Game, GameStatus, Pos};
+use crate::game::{Cell, Game, GameStatus, Pos};
 use chrono::Utc;
-use rusqlite::{params, Connection, Error, Result};
+use rusqlite::{params, Connection, Result};
 use std::time::SystemTime;
 
 pub fn init() -> Result<usize, rusqlite::Error> {
@@ -46,7 +46,8 @@ pub fn get(player_name: String) -> Result<Game, rusqlite::Error> {
                 game_status: GameStatus::RUNNING,
                 next_food_target: None,
                 board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
-                snake: Snake::new(Some(score as usize)),
+                snake: Snake::new(Some(score as usize), crate::game::Direction::RIGHT),
+                guests: Vec::new(),
             };
             Ok(g)
         },
@@ -68,7 +69,7 @@ pub fn update(game: &Game) -> Result<(), rusqlite::Error> {
     let x = &game.snake.parts_x_y[1].x.to_string();
     let y = &game.snake.parts_x_y[1].y.to_string();
 
-    conn.execute(update_query, params![&game.score, x, y, &game.db_id]);
+    conn.execute(update_query, params![&game.score, x, y, &game.db_id])?;
     Ok(())
 }
 

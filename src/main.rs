@@ -1,4 +1,3 @@
-#![allow(unused)] // Remove later
 use std::io::Write;
 mod db;
 mod engine;
@@ -7,23 +6,22 @@ mod game;
 mod graphics;
 mod logger;
 mod test;
-use crate::errors::GameErr;
+use crate::{errors::GameErr, game::Direction};
 use game::{Cell, Game};
 use logger::{log, Log};
-use rusqlite::Error;
 use std::io::{self, Error as stdError};
 fn main() {
     if let Err(e) = logger::setup_logger() {
         println!("Unable to initlaize logger. Reason: {}", e);
     }
-    let name = graphics::show_intro();
+    graphics::show_intro();
     setup_game();
 }
 
 fn setup_game() {
     let (player_name, got_name) = match greet() {
         Ok(name) => (name, true),
-        Err(e) => {
+        Err(_e) => {
             println!("Unable to fetch name. Starting new game!");
             ("".to_string(), false)
         }
@@ -38,6 +36,7 @@ fn setup_game() {
 
     println!("Starting new game");
     let mut new_game = Game::new(None);
+    new_game.add_guest();
     new_game.save();
     play(new_game);
 }

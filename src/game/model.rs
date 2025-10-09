@@ -4,8 +4,6 @@ use crate::game::types::GameStatus;
 use crate::game::{Cell, Direction};
 pub const BOARD_COLS: usize = 16;
 pub const BOARD_ROWS: usize = 16;
-use std::error::Error as stdErr;
-use std::fmt::{self, Display, Formatter};
 use std::time::SystemTime;
 pub struct Game {
     pub score: u16,
@@ -13,6 +11,7 @@ pub struct Game {
     pub board: [[Cell; BOARD_COLS]; BOARD_ROWS],
     pub game_start_at: std::time::SystemTime,
     pub snake: Snake,
+    pub guests: Vec<Snake>,
     pub db_id: Option<u16>,
     pub game_status: GameStatus,
     pub player_name: String,
@@ -26,26 +25,23 @@ impl Game {
             next_food_target: None,
             board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
             game_start_at: SystemTime::now(),
-            snake: Snake::new(None),
+            snake: Snake::new(None, Direction::RIGHT),
             db_id: None,
             game_status: GameStatus::RUNNING,
             player_name: pn,
+            guests: vec![],
         }
     }
 
-    pub fn save(&mut self) {
+    pub fn add_guest(&mut self) {
+        self.guests.push(Snake::new(None, Direction::DOWN));
+    }
+
+    pub fn save(&mut self) -> Result<(), rusqlite::Error> {
         if self.db_id.is_none() {
-            db::insert(self);
+            db::insert(self)
         } else {
-            println!("Saving game");
-            match db::update(&self) {
-                Err(e) => {
-                    println!("Unable to save due to: {}", e);
-                }
-                Ok(()) => {
-                    println!("Game saved.");
-                }
-            }
+            db::update(&self)
         }
     }
 
@@ -78,6 +74,16 @@ impl Game {
                 grid[pos.y as usize][pos.x as usize] = Cell::SNAKEHEAD;
             } else {
                 grid[pos.y as usize][pos.x as usize] = Cell::SNAKEBODY;
+            }
+        }
+
+        for snake in &mut self.guests {
+            for (i, pos) in snake.parts_x_y.iter().enumerate() {
+                if i == &self.snake.length() - 1 {
+                    grid[pos.y as usize][pos.x as usize] = Cell::SNAKEHEAD;
+                } else {
+                    grid[pos.y as usize][pos.x as usize] = Cell::SNAKEBODY;
+                }
             }
         }
 
@@ -185,8 +191,8 @@ impl Snake {
         self.parts_x_y.len()
     }
 
-    pub fn new(score: Option<usize>) -> Self {
-        let start_direction = Direction::RIGHT;
+    pub fn new(score: Option<usize>, direction: Direction) -> Self {
+        let start_direction = &direction;
         let start_pos = Pos { x: 5, y: 5 };
         let mut parts: Vec<Pos> = vec![start_pos];
         let mut size = score.unwrap_or(0);
@@ -199,7 +205,7 @@ impl Snake {
             parts.push(pos);
         }
         Self {
-            direction: Direction::RIGHT,
+            direction: direction,
             parts_x_y: parts,
         }
     }

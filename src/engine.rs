@@ -6,32 +6,36 @@ use crate::graphics::draw;
 use crossterm::event::{Event, KeyCode};
 use crossterm::{event, execute};
 use std::time::Duration;
-
 enum KeyStrokeResult {
     SetNewDirection(Direction),
     Quit,
 }
 pub fn run(mut game: Game) -> GameResult<()> {
-    execute!(std::io::stdout()).unwrap();
+    execute!(std::io::stdout())?;
     loop {
-        crossterm::terminal::enable_raw_mode().unwrap();
-        if event::poll(Duration::from_millis(100)).unwrap() {
+        crossterm::terminal::enable_raw_mode()?;
+        if event::poll(Duration::from_millis(100))? {
             // Safe to unwrap because poll returned true
-            if let Event::Key(key_event) = event::read().unwrap() {
+            if let Event::Key(key_event) = event::read()? {
                 let next_direction = handle_keystroke(&game.snake.direction, &key_event.code);
                 match next_direction {
                     Some(KeyStrokeResult::Quit) => {
                         if let Err(e) = crossterm::terminal::disable_raw_mode() {
                             println!("Unable to disable raw mode.");
                         }
-                        if (game.score > 0) {
-                            game.save();
+                        if game.score > 0 {
+                            if let Err(e) = game.save() {
+                                println!("Unable to save game. Reason {e}");
+                            }
                         }
                         return Ok(()); // Quit the game
                     }
                     Some(KeyStrokeResult::SetNewDirection(direction)) => {
                         game.snake.set_direction(direction);
-                        game.snake.move_next();
+                        game.snake.move_next()?;
+                        for g_snake in &mut game.guests {
+                            g_snake.move_next()?;
+                        }
                     }
                     _ => {}
                 }
@@ -39,6 +43,9 @@ pub fn run(mut game: Game) -> GameResult<()> {
                 draw(&game);
             }
         } else {
+            for g_snake in &mut game.guests {
+                g_snake.move_next()?;
+            }
             game.snake.move_next()?;
             game.update_board();
             draw(&game);
