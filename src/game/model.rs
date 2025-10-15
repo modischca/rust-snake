@@ -5,9 +5,25 @@ use crate::game::{Cell, Direction};
 pub const BOARD_COLS: usize = 16;
 pub const BOARD_ROWS: usize = 16;
 use std::time::SystemTime;
+
+pub trait CurrentPos {
+    fn get_pos(&self) -> &Pos;
+}
+
+pub struct Food {
+    pos: Pos,
+}
+
+impl CurrentPos for Food {
+    fn get_pos(&self) -> &Pos {
+        &self.pos
+    }
+}
+
 pub struct Game {
     pub score: u16,
-    pub next_food_target: Option<Pos>,
+    //pub next_food_target: Option<Pos>,
+    pub food: Vec<Food>,
     pub board: [[Cell; BOARD_COLS]; BOARD_ROWS],
     pub game_start_at: std::time::SystemTime,
     pub snake: Snake,
@@ -22,7 +38,7 @@ impl Game {
         let pn = player_name.unwrap_or("Unknown".to_string());
         Self {
             score: 0,
-            next_food_target: None,
+            food: Vec::new(),
             board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
             game_start_at: SystemTime::now(),
             snake: Snake::new(None, Direction::RIGHT),
@@ -48,19 +64,20 @@ impl Game {
     pub fn load_existing(player_name: String) -> Option<Game> {
         match db::get(player_name) {
             Ok(game) => Some(game),
-            Err(e) => None,
+            Err(_e) => None,
         }
     }
 
     pub fn update_score(&mut self) {
         // Just tryin the let else pattern.
-        let (Some(food_pos), Some(head_pos)) = (self.next_food_target, self.snake.parts_x_y.last())
-        else {
-            return ();
-        };
-        if head_pos.x == food_pos.x && head_pos.y == food_pos.y {
+        let snake_pos = self.snake.get_pos().clone();
+        let index = self
+            .food
+            .iter()
+            .position(|f| f.pos.x == snake_pos.x && f.pos.y == snake_pos.y);
+        if let Some(index) = index {
             self.score += 10;
-            self.next_food_target = None;
+            self.food.remove(index);
             self.snake.grow();
         }
     }
@@ -87,19 +104,25 @@ impl Game {
             }
         }
 
-        if let Some(next_food_target) = self.next_food_target {
+        if self.food.len() > 0 {
             // Place food at board if food added to the game.
-            grid[next_food_target.y as usize][next_food_target.x as usize] = Cell::FOOD;
+            for f in &self.food {
+                grid[f.pos.y as usize][f.pos.x as usize] = Cell::FOOD;
+            }
         } else {
-            // Add next food position to the game, if there is no food.
-            // Food will be drawn on board on next iteration.
-            let x = rand::random_range(0..BOARD_ROWS - 1);
-            let y = rand::random_range(0..BOARD_COLS - 1);
-            let food_at_pos = Pos {
-                x: x as u16,
-                y: y as u16,
-            };
-            self.next_food_target = Some(food_at_pos);
+            let number_of_food = rand::random_range(0..5);
+            for _i in 0..number_of_food {
+                // Add next food position to the game, if there is no food.
+                // Food will be drawn on board on next iteration.
+                let x = rand::random_range(0..BOARD_ROWS - 1);
+                let y = rand::random_range(0..BOARD_COLS - 1);
+                self.food.push(Food {
+                    pos: Pos {
+                        x: x as u16,
+                        y: y as u16,
+                    },
+                });
+            }
         }
 
         self.board = grid;
@@ -154,6 +177,12 @@ impl Pos {
 pub struct Snake {
     pub direction: Direction,
     pub parts_x_y: Vec<Pos>,
+}
+
+impl CurrentPos for Snake {
+    fn get_pos(&self) -> &Pos {
+        self.parts_x_y.last().expect("Snake need to have a head")
+    }
 }
 
 impl Snake {

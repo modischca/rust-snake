@@ -36,7 +36,7 @@ fn setup_game() {
 
     println!("Starting new game");
     let mut new_game = Game::new(None);
-    new_game.add_guest();
+    //new_game.add_guest();
     new_game.save();
     play(new_game);
 }

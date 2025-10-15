@@ -44,7 +44,7 @@ pub fn get(player_name: String) -> Result<Game, rusqlite::Error> {
                 game_start_at: SystemTime::now(),
                 player_name: player_name.into(),
                 game_status: GameStatus::RUNNING,
-                next_food_target: None,
+                food: Vec::new(),
                 board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
                 snake: Snake::new(Some(score as usize), crate::game::Direction::RIGHT),
                 guests: Vec::new(),
