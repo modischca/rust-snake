@@ -11,15 +11,14 @@ use std::{
 
 use crate::Cell;
 pub fn draw(game: &Game) {
-    let datagrid = &game.board;
+    let datagrid = &game.board.board;
     let mut stdout = io::stdout();
     stdout
         .execute(terminal::Clear(terminal::ClearType::All))
         .unwrap();
-    let empty_block = '⬛';
-    let snake_body = '🟢';
-    let snake_head = '🟢';
-    let food = '🍔';
+    let empty_block = '🟨';
+    let snake_body = '🔳';
+    let snake_head = '🔳';
     let mut output = String::from("");
     let pos = &game.snake.parts_x_y[&game.snake.parts_x_y.len() - 1];
     output.push_str(&format!("Morten (Learn Rust) Snake"));
@@ -46,7 +45,7 @@ pub fn draw(game: &Game) {
                 Cell::SNAKEHEAD => {
                     output.push_str(&format!("{}", snake_head));
                 }
-                Cell::FOOD => {
+                Cell::FOOD(food) => {
                     output.push_str(&format!("{}", food));
                 }
             }

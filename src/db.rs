@@ -1,4 +1,4 @@
-use crate::game::model::{Snake, BOARD_COLS, BOARD_ROWS};
+use crate::game::model::{Board, Snake, BOARD_COLS, BOARD_ROWS};
 use crate::game::{Cell, Game, GameStatus, Pos};
 use chrono::Utc;
 use rusqlite::{params, Connection, Result};
@@ -45,7 +45,7 @@ pub fn get(player_name: String) -> Result<Game, rusqlite::Error> {
                 player_name: player_name.into(),
                 game_status: GameStatus::RUNNING,
                 food: Vec::new(),
-                board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
+                board:Board::new(),
                 snake: Snake::new(Some(score as usize), crate::game::Direction::RIGHT),
                 guests: Vec::new(),
             };

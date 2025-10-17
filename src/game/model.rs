@@ -1,6 +1,6 @@
 use crate::db;
 use crate::errors::{GameErr, GameResult};
-use crate::game::types::GameStatus;
+use crate::game::types::{FoodType, GameStatus};
 use crate::game::{Cell, Direction};
 pub const BOARD_COLS: usize = 16;
 pub const BOARD_ROWS: usize = 16;
@@ -10,8 +10,10 @@ pub trait CurrentPos {
     fn get_pos(&self) -> &Pos;
 }
 
+
 pub struct Food {
     pos: Pos,
+    icon: FoodType
 }
 
 impl CurrentPos for Food {
@@ -20,11 +22,42 @@ impl CurrentPos for Food {
     }
 }
 
+pub struct Board {
+    pub board: [[Cell; BOARD_COLS]; BOARD_ROWS],
+}
+
+impl Board {
+    pub fn new() -> Self {
+        let mut board: [[Cell; BOARD_COLS]; BOARD_ROWS] = [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS];
+        for i in 0..BOARD_ROWS {
+            for j in 0..BOARD_COLS {
+                board[i][j] = Cell::EMPTY;
+            }
+        }
+        Self { board }
+    }
+
+    pub fn clear(&mut self) {
+        for i in 0..BOARD_ROWS {
+            for j in 0..BOARD_COLS {
+                self.board[i][j] = Cell::EMPTY;
+            }
+        }
+    }
+
+    pub fn is_pos_available(&self, pos: &Pos) -> bool {
+        let cell_type = self.board[pos.y as usize][pos.x as usize];
+        match cell_type {
+            Cell::EMPTY => true,
+            _ => false,
+        }
+    }
+}
 pub struct Game {
     pub score: u16,
     //pub next_food_target: Option<Pos>,
     pub food: Vec<Food>,
-    pub board: [[Cell; BOARD_COLS]; BOARD_ROWS],
+    pub board: Board,
     pub game_start_at: std::time::SystemTime,
     pub snake: Snake,
     pub guests: Vec<Snake>,
@@ -39,7 +72,7 @@ impl Game {
         Self {
             score: 0,
             food: Vec::new(),
-            board: [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS],
+            board: Board::new(),
             game_start_at: SystemTime::now(),
             snake: Snake::new(None, Direction::RIGHT),
             db_id: None,
@@ -84,48 +117,41 @@ impl Game {
 
     pub fn update_board(&mut self) {
         self.update_score();
-        let mut grid: [[Cell; BOARD_COLS]; BOARD_ROWS] = [[Cell::EMPTY; BOARD_COLS]; BOARD_ROWS];
+        self.board.clear();
 
-        for (i, pos) in self.snake.parts_x_y.iter().enumerate() {
-            if i == &self.snake.length() - 1 {
-                grid[pos.y as usize][pos.x as usize] = Cell::SNAKEHEAD;
-            } else {
-                grid[pos.y as usize][pos.x as usize] = Cell::SNAKEBODY;
-            }
-        }
-
-        for snake in &mut self.guests {
+        for snake in std::iter::once(&mut self.snake).chain(self.guests.iter_mut()) {
             for (i, pos) in snake.parts_x_y.iter().enumerate() {
-                if i == &self.snake.length() - 1 {
-                    grid[pos.y as usize][pos.x as usize] = Cell::SNAKEHEAD;
-                } else {
-                    grid[pos.y as usize][pos.x as usize] = Cell::SNAKEBODY;
-                }
+                let cell = if i == snake.length() - 1 { Cell::SNAKEHEAD } else { Cell::SNAKEBODY };
+                self.board.board[pos.y as usize][pos.x as usize] = cell;
             }
         }
+        self.handle_food();
+    }
+    fn handle_food(&mut self) {
 
         if self.food.len() > 0 {
             // Place food at board if food added to the game.
             for f in &self.food {
-                grid[f.pos.y as usize][f.pos.x as usize] = Cell::FOOD;
+                self.board.board[f.pos.y as usize][f.pos.x as usize] = Cell::FOOD(f.icon.get_emoji());
             }
         } else {
-            let number_of_food = rand::random_range(0..5);
+            let number_of_food
+                = rand::random_range(0..5);
             for _i in 0..number_of_food {
-                // Add next food position to the game, if there is no food.
-                // Food will be drawn on board on next iteration.
-                let x = rand::random_range(0..BOARD_ROWS - 1);
-                let y = rand::random_range(0..BOARD_COLS - 1);
-                self.food.push(Food {
-                    pos: Pos {
-                        x: x as u16,
-                        y: y as u16,
-                    },
-                });
+                // Add the next food position to the game if there is no food.
+                // Food will be drawn on board on the next iteration.
+                let food_pod = Pos {
+                    x: rand::random_range(0..BOARD_ROWS - 1) as u16,
+                    y: rand::random_range(0..BOARD_COLS - 1) as u16,
+                };
+                if (self.board.is_pos_available(&food_pod)) {
+                    self.food.push(Food {
+                        icon: FoodType::random(),
+                        pos: food_pod,
+                    });
+                }
             }
         }
-
-        self.board = grid;
     }
 }
 
